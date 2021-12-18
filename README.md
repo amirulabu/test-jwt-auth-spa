@@ -1,0 +1,1 @@
+# JWT Auth SPA with HTTP-only cookies
