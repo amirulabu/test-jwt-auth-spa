@@ -63,12 +63,12 @@ export class TokensService {
 
   public async createAccessTokenFromRefreshToken(
     refresh: string,
-  ): Promise<string> {
+  ): Promise<{ token: string; user: User }> {
     const user = await this.resolveRefreshToken(refresh);
 
     const token = await this.generateAccessToken(user);
 
-    return token;
+    return { token, user };
   }
 
   private async decodeRefreshToken(

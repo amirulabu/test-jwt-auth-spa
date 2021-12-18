@@ -13,6 +13,9 @@ import { LoginDto } from './dto/login.dto';
 import { Response, Request } from 'express';
 import { TokensService } from './tokens.service';
 
+const sevenDaysInSeconds = 60 * 60 * 24 * 7;
+const sevenDaysInMiliseconds = 1000 * sevenDaysInSeconds;
+
 @Controller('auth')
 export class AuthController {
   constructor(
@@ -39,15 +42,14 @@ export class AuthController {
     const accessToken = await this.tokensService.generateAccessToken(user);
     const refreshToken = await this.tokensService.generateRefreshToken(
       user,
-      60 * 60 * 24 * 7,
+      sevenDaysInSeconds,
     );
 
     response
       .cookie(REFRESH_TOKEN_COOKIE_NAME, refreshToken, {
         httpOnly: true,
         domain: 'localhost',
-        // 1000 * 60 * 60 * 24 * 7 is 7 days
-        expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7),
+        expires: new Date(Date.now() + sevenDaysInMiliseconds),
       })
       .send({
         status: 'success',
@@ -56,19 +58,34 @@ export class AuthController {
   }
 
   @Post('/refresh')
-  public async refresh(@Req() request: Request) {
+  public async refresh(
+    @Res({ passthrough: true }) response: Response,
+    @Req() request: Request,
+  ) {
     const refreshToken = request.cookies[REFRESH_TOKEN_COOKIE_NAME];
 
     if (!refreshToken) {
       throw new UnprocessableEntityException('Refresh token not found');
     }
 
-    const accessToken =
+    const { token, user } =
       await this.tokensService.createAccessTokenFromRefreshToken(refreshToken);
-    return {
-      status: 'success',
-      data: { token: accessToken },
-    };
+
+    const newRefreshToken = await this.tokensService.generateRefreshToken(
+      user,
+      sevenDaysInSeconds,
+    );
+
+    response
+      .cookie(REFRESH_TOKEN_COOKIE_NAME, newRefreshToken, {
+        httpOnly: true,
+        domain: 'localhost',
+        expires: new Date(Date.now() + sevenDaysInMiliseconds),
+      })
+      .send({
+        status: 'success',
+        data: { token },
+      });
   }
 
   @Post('logout')
