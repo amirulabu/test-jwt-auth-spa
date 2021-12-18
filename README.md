@@ -9,7 +9,7 @@
 
 ## Solution
 
-- Access token and refresh token as per OAuth 2.0, but both not sent directly to client. 
+- Access token and refresh token as per OAuth 2.0, but only access token sent directly to client, refresh token is sent via cookie. 
   - access token is sent from server via json, will be stored in client side javascript, meaning its a variable but no open to global
   - refresh token is sent to client in form of http-only cookie and it is automatically sent with every request (or only refresh endpoint)
   - the access token is refreshed when the token is expired or a page load happens by sending a POST request to `/refresh` 
